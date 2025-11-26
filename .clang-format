@@ -1,0 +1,29 @@
+# Based on LLVM style (closer to embedded/IDF conventions, without extra Google overrides)
+BasedOnStyle: LLVM
+
+# Basic indentation and column settings
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ColumnLimit: 100
+
+# Braces and indentation
+BreakBeforeBraces: Attach
+NamespaceIndentation: None
+AccessModifierOffset: -2
+
+# Short statements and functions
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+
+# Spaces and penalties
+SpacesInParentheses: false
+SpacesInAngles: false
+SpaceAfterCStyleCast: true
+SpaceBeforeAssignmentOperators: true
+PenaltyReturnTypeOnItsOwnLine: 200
+
+# Include sorting
+SortIncludes: true
+IncludeBlocks: Preserve
