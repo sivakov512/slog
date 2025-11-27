@@ -1,0 +1,101 @@
+name: bump-template-on-slog-release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to use (format vX.Y.Z). Leave empty to use latest tag"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  TEMPLATE_REPO: "sivakov512/esp-idf-project-template"
+  TEMPLATE_BRANCH: "master"
+  TEMPLATE_IDF_PATH: "main/idf_component.yml"
+  DEP_KEY: "slog"
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo (to access tags when manual)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag (from event, input, or latest)
+        id: v
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVENT="${{ github.event_name }}"
+          INPUT_TAG="${{ github.event.inputs.tag || '' }}"
+          TAG=""
+
+          if [[ "$EVENT" == "release" ]]; then
+            TAG="${{ github.event.release.tag_name }}"
+          elif [[ -n "$INPUT_TAG" ]]; then
+            TAG="$INPUT_TAG"
+          else
+            TAG="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1 || true)"
+          fi
+
+          if [[ -z "${TAG}" ]]; then
+            echo "Cannot determine tag. Provide 'tag' input or create a release." >&2
+            exit 1
+          fi
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Unexpected tag format: $TAG (expected vX.Y.Z)" >&2
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "ver=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Using tag: $TAG"
+
+      - name: Checkout template repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TEMPLATE_REPO }}
+          ref: ${{ env.TEMPLATE_BRANCH }}
+          token: ${{ secrets.RELEASER_TOKEN }}
+          path: template
+
+      - name: Install yq
+        uses: mikefarah/yq@v4.44.3
+
+      - name: Bump version in idf_component.yml
+        working-directory: template
+        run: |
+          set -euo pipefail
+          FILE="${TEMPLATE_IDF_PATH}"
+          [[ -f "$FILE" ]] || { echo "File not found: $FILE"; exit 1; }
+
+          yq -i ".dependencies.${DEP_KEY}.version = \"${{ steps.v.outputs.tag }}\"" "$FILE"
+
+          echo "---- diff ----"
+          git --no-pager diff -- "$FILE" || true
+          echo "--------------"
+
+          if git status --porcelain | grep -q .; then
+            git add "$FILE"
+            git -c user.name="ci-bot" -c user.email="ci@example.com" \
+              commit -m "chore: bump ${DEP_KEY} to ${{ steps.v.outputs.tag }}"
+          else
+            echo "No changes to commit"
+          fi
+
+      - name: Push to template repo
+        if: success()
+        uses: ad-m/github-push-action@v0.8.0
+        with:
+          github_token: ${{ secrets.RELEASER_TOKEN }}
+          repository: ${{ env.TEMPLATE_REPO }}
+          branch: ${{ env.TEMPLATE_BRANCH }}
+          directory: template
