@@ -22,7 +22,7 @@ static uint32_t default_ts(void) {
 static void default_backend(slog_level_t level, const char *tag, const char *line) {
   (void) level;
   (void) tag;
-  fprintf(stderr, "%s\n", line);
+  (void) line;
 }
 
 // ---- Configuration API ----
