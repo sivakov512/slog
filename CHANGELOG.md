@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/sivakov512/slog/compare/v1.0.0...v1.1.0) (2025-11-28)
+
+
+### Features
+
+* Do nothing on default backend ([204ff89](https://github.com/sivakov512/slog/commit/204ff89139de1b5845f16cef635b63bb6763b4b6))
+
 ## 1.0.0 (2025-11-27)
 
 
