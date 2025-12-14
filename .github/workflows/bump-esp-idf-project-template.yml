@@ -15,7 +15,7 @@ permissions:
 
 env:
   TEMPLATE_REPO: "sivakov512/esp-idf-project-template"
-  TEMPLATE_BRANCH: "master"
+  TEMPLATE_BRANCH: "main"
   TEMPLATE_IDF_PATH: "main/idf_component.yml"
   DEP_KEY: "slog"
 
