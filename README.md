@@ -1,113 +1,104 @@
-# Simple C logging library
+# Slog - simple cross-platform logging macros for C
 
 [![Formatting](https://github.com/sivakov512/slog/actions/workflows/formatting.yml/badge.svg)](https://github.com/sivakov512/slog/actions/workflows/formatting.yml)
 [![Checks](https://github.com/sivakov512/slog/actions/workflows/checks.yml/badge.svg)](https://github.com/sivakov512/slog/actions/workflows/checks.yml)
 
-Lightweight, embedded-friendly C logging library with clean colored output and platform-agnostic API.
+One API. Native backends. No unnecessary overhead.
+• ESP-IDF → maps directly to ESP_LOGx
+• Host / Generic → user-provided sink callback
+• Silent by default on host
+• No extra formatting layer on ESP
 
-## Purpose
+## Basic usage
 
-Have a logger with neat output that works across platforms. Test your embedded libraries on host without suffering - write logs once, run everywhere.
+In each .c file:
 
-## Features
+```c
+#include "slog.h"
 
-- 📦 Embedded-friendly (small footprint)
-- 🌈 Colored output with timestamps
-- 🔧 Platform-agnostic API
-- ⚡ Zero dependencies for core functionality
+SLOG_REGISTER("my_module");
 
-## Output Example
-
-```
-I (1234) my_tag: Application started
-D (1245) my_tag: Debug information here
-W (1256) my_tag: Something might be wrong
-E (1267) my_tag: Critical error occurred
+SLOGI("hello %d", 42);
+SLOGW("something odd");
+SLOGE("failed: %s", "reason");
 ```
 
-## Installation and Usage
+Dynamic level:
 
-### Generic (Desktop/Host)
+```c
+SLOG(SLOG_WARN, "value=%d", v);
+```
 
-For testing libraries on host or general desktop applications.
+SLOG_REGISTER("tag") must be used once per file (file scope).
 
-Add to your CMakeLists.txt:
+## Backends
+
+### ESP-IDF
+
+Enabled automatically if:
+• ESP_PLATFORM is defined, or
+• SLOG_BACKEND_ESP is defined.
+
+Mappings are direct:
+• SLOGI → ESP_LOGI
+• SLOGE → ESP_LOGE
+• SLOG(level, ...) → correct ESP_LOGx
+
+No extra buffers. No additional stack usage.
+
+Logging behavior (levels, filtering, formatting) is fully controlled by ESP-IDF.
+
+### Host / Generic
+
+Install a sink:
+
+```c
+#include "slog.h"
+#include <stdio.h>
+
+static void sink(slog_level_t level,
+                 const char *tag,
+                 const char *fmt,
+                 va_list args,
+                 void *user)
+{
+  (void)user;
+  fprintf(stderr, "[%d] %s: ", (int)level, tag ? tag : "");
+  vfprintf(stderr, fmt, args);
+  fputc('\n', stderr);
+}
+
+int main(void) {
+  slog_generic_set_sink(sink, NULL);
+
+  SLOG_REGISTER("host");
+  SLOGI("hello");
+}
+```
+
+If no sink is set, logs are ignored.
+
+## Installation (CMake)
 
 <!--x-release-please-start-version-->
+
 ```cmake
 include(FetchContent)
 
 FetchContent_Declare(
-    slog
-    GIT_REPOSITORY https://github.com/sivakov512/slog.git
-    GIT_TAG        v1.1.0
+  slog
+  GIT_REPOSITORY https://github.com/sivakov512/slog.git
+  GIT_TAG        v1.1.0
 )
 FetchContent_MakeAvailable(slog)
 
-target_link_libraries(your_target slog)
+target_link_libraries(your_target PRIVATE slog)
 ```
+
 <!--x-release-please-end-->
 
-Usage:
-```c
-#include "slog.h"
-#include "generic/slog.h"
+## Notes
 
-#define TAG "my_app"
-
-int main() {
-    slog_generic_init();
-    
-    SLOGI("Hello from generic slog!");
-    SLOGD("Debug value: %d", 42);
-    SLOGW("Warning message");
-    
-    return 0;
-}
-```
-
-### ESP-IDF
-
-For embedded ESP32 applications.
-
-Add to your `idf_component.yml`:
-
-<!--x-release-please-start-version-->
-```yaml
-dependencies:
-  slog:
-    git: https://github.com/sivakov512/slog.git
-    version: "v1.1.0"
-```
-<!--x-release-please-end-->
-
-Usage:
-```c
-#include "slog.h"
-#include "esp/slog.h"
-
-#define TAG "my_app"
-
-void app_main() {
-    slog_esp_init();
-    
-    SLOGI("Hello from ESP!");
-    SLOGD("Free heap: %d", esp_get_free_heap_size());
-    
-    // ESP-specific error handling
-    RETURN_ON_ERROR(some_esp_function(), "Failed to initialize");
-}
-```
-
-## Development
-
-```bash
-# Check code formatting
-make check-format
-
-# Run tests
-make test
-
-# Run static analysis
-make lint
-```
+    •	Designed for embedded libraries tested on host.
+    •	No default output on desktop — applications decide where logs go.
+    •	Keep it simple: macros in your code, native logging underneath.

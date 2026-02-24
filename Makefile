@@ -1,4 +1,4 @@
-.PHONY: build test clean lint check-format
+.PHONY: build clean test lint check-format fullcheck
 
 CLANG_TIDY ?= clang-tidy
 CLANG_TIDY_EXTRAS :=
@@ -24,11 +24,11 @@ build:
 	cmake -S ${TESTS_DIR} -B ${TESTS_BUILD_DIR} -DCMAKE_BUILD_TYPE=Debug
 	cmake --build ${TESTS_BUILD_DIR} -j
 
+clean:
+		rm -rf ${TESTS_BUILD_DIR}
+
 test: build
 	ctest --test-dir ${TESTS_BUILD_DIR} --output-on-failure -V
-
-clean:
-	rm -rf ${TESTS_BUILD_DIR}
 
 lint: build
 	find . \
@@ -47,3 +47,5 @@ check-format:
     	-type f \( -name "*.c" -o -name "*.h" -o -name "*.cpp" -o -name "*.hpp" \) \
         -print0 \
 		| xargs -0 ${CLANG_FORMAT} --dry-run --Werror
+
+fullcheck: test lint check-format
