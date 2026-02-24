@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(LIBNAME slog)
-set(TESTNAME slog_tests)
 
 project(slog_tests C)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -28,14 +27,16 @@ add_subdirectory(
     ${CMAKE_CURRENT_LIST_DIR}/../ ${CMAKE_BINARY_DIR}/${LIBNAME})
 
 
-# Add tests
-set(TEST_SRCS test_slog.c)
-
-add_executable(${TESTNAME} ${TEST_SRCS})
-target_link_libraries(${TESTNAME} PRIVATE unity ${LIBNAME})
-
-set_target_properties(${TESTNAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+add_executable(slog_generic
+    test_generic.c
 )
 
-add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+foreach(TESTNAME IN ITEMS slog_generic)
+    target_link_libraries(${TESTNAME} PRIVATE unity ${LIBNAME})
+
+    set_target_properties(${TESTNAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+
+    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+endforeach()

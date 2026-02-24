@@ -1,16 +1,5 @@
 #pragma once
 
-#include <stdarg.h>
-#include <stdint.h>
-
-#ifndef SLOG_MSG_MAX
-#define SLOG_MSG_MAX 256
-#endif
-
-#ifndef SLOG_LINE_MAX
-#define SLOG_LINE_MAX 320
-#endif
-
 typedef enum {
   SLOG_VERBOSE = 0,
   SLOG_DEBUG,
@@ -19,19 +8,73 @@ typedef enum {
   SLOG_ERROR,
 } slog_level_t;
 
-typedef uint32_t (*slog_timestamp_fn_t)(void);
+// ---- ESP-IDF ----
+#if defined(ESP_PLATFORM) || defined(SLOG_BACKEND_ESP)
 
-typedef void (*slog_backend_fn_t)(slog_level_t level, const char *tag, const char *line);
+#include <esp_log.h>
 
-void slog_set_timestamp_cb(slog_timestamp_fn_t func);
-void slog_set_backend_cb(slog_backend_fn_t func);
+// File scoped registration
+#define SLOG_REGISTER(tag_literal) static const char *const slog_tag__ = (tag_literal)
+#define SLOG_TAG (slog_tag__)
 
-void slog_v(slog_level_t level, const char *tag, const char *fmt, va_list args);
+// Direct dispatch, eg SLOGE("hello") -> ESP_LOGE(SLOG_TAG, "hello")
+#define SLOGV(fmt, ...) ESP_LOGV(SLOG_TAG, fmt, ##__VA_ARGS__)
+#define SLOGD(fmt, ...) ESP_LOGD(SLOG_TAG, fmt, ##__VA_ARGS__)
+#define SLOGI(fmt, ...) ESP_LOGI(SLOG_TAG, fmt, ##__VA_ARGS__)
+#define SLOGW(fmt, ...) ESP_LOGW(SLOG_TAG, fmt, ##__VA_ARGS__)
+#define SLOGE(fmt, ...) ESP_LOGE(SLOG_TAG, fmt, ##__VA_ARGS__)
 
-void slog(slog_level_t level, const char *tag, const char *fmt, ...);
+// Generic dispatch, eg SLOG(SLOG_ERROR, "hello") -> ESP_LOGE(SLOG_TAG, "hello")
+#define SLOG(level, fmt, ...)                                                                      \
+  do {                                                                                             \
+    switch ((level)) {                                                                             \
+    case SLOG_ERROR:                                                                               \
+      ESP_LOGE(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
+      break;                                                                                       \
+    case SLOG_WARN:                                                                                \
+      ESP_LOGW(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
+      break;                                                                                       \
+    case SLOG_INFO:                                                                                \
+      ESP_LOGI(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
+      break;                                                                                       \
+    case SLOG_VERBOSE:                                                                             \
+      ESP_LOGV(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
+      break;                                                                                       \
+    case SLOG_DEBUG:                                                                               \
+    default:                                                                                       \
+      ESP_LOGD(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
+      break;                                                                                       \
+    }                                                                                              \
+  } while (0)
 
-#define SLOGV(fmt, ...) slog(SLOG_VERBOSE, TAG, fmt, ##__VA_ARGS__)
-#define SLOGD(fmt, ...) slog(SLOG_DEBUG, TAG, fmt, ##__VA_ARGS__)
-#define SLOGI(fmt, ...) slog(SLOG_INFO, TAG, fmt, ##__VA_ARGS__)
-#define SLOGW(fmt, ...) slog(SLOG_WARN, TAG, fmt, ##__VA_ARGS__)
-#define SLOGE(fmt, ...) slog(SLOG_ERROR, TAG, fmt, ##__VA_ARGS__)
+// ---- GENERIC / HOST ----
+#else
+
+#include <stdarg.h>
+
+// API
+typedef void (*slog_generic_v_fn_t)(slog_level_t level, const char *tag, const char *fmt,
+                                    va_list args, void *user);
+void slog_generic_set_sink(slog_generic_v_fn_t fn, void *user); // NOLINT
+
+// File scoped registration
+#define SLOG_REGISTER(tag_literal) static const char *const slog_tag__ = (tag_literal)
+#define SLOG_TAG (slog_tag__)
+
+void slog_generic_log(slog_level_t level, const char *tag, const char *fmt, ...)
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((format(printf, 3, 4)))
+#endif
+    ;
+
+// Direct dispatch
+#define SLOGV(fmt, ...) slog_generic_log(SLOG_VERBOSE, SLOG_TAG, fmt, ##__VA_ARGS__)
+#define SLOGD(fmt, ...) slog_generic_log(SLOG_DEBUG, SLOG_TAG, fmt, ##__VA_ARGS__)
+#define SLOGI(fmt, ...) slog_generic_log(SLOG_INFO, SLOG_TAG, fmt, ##__VA_ARGS__)
+#define SLOGW(fmt, ...) slog_generic_log(SLOG_WARN, SLOG_TAG, fmt, ##__VA_ARGS__)
+#define SLOGE(fmt, ...) slog_generic_log(SLOG_ERROR, SLOG_TAG, fmt, ##__VA_ARGS__)
+
+// Generic dispatch
+#define SLOG(level, fmt, ...) slog_generic_log((level), SLOG_TAG, fmt, ##__VA_ARGS__)
+
+#endif
