@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/sivakov512/slog/compare/v1.1.0...v2.0.0) (2026-02-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* Completely reimplement - sink callbacks for host and direct macros mapping for ESP
+
+### Features
+
+* Completely reimplement - sink callbacks for host and direct macros mapping for ESP ([542c28f](https://github.com/sivakov512/slog/commit/542c28f8119885069f187742deea346c14a264fb))
+
 ## [1.1.0](https://github.com/sivakov512/slog/compare/v1.0.0...v1.1.0) (2025-11-28)
 
 
