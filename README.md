@@ -88,7 +88,7 @@ include(FetchContent)
 FetchContent_Declare(
   slog
   GIT_REPOSITORY https://github.com/sivakov512/slog.git
-  GIT_TAG        v1.1.0
+  GIT_TAG        v2.0.0
 )
 FetchContent_MakeAvailable(slog)
 
