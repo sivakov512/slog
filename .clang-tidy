@@ -4,11 +4,13 @@
 Checks: |
   -*,
   clang-diagnostic-*,
+  -clang-diagnostic-unused-command-line-argument,
   clang-analyzer-*,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   bugprone-*,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
+  -bugprone-macro-parentheses,
   performance-*,
   portability-*,
   modernize-*,
@@ -25,7 +27,7 @@ Checks: |
 
 
 WarningsAsErrors: "*"
-HeaderFilterRegex: ""
+SystemHeaders: false
 
 CheckOptions:
   # ===== Naming =====

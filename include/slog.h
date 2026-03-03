@@ -1,11 +1,11 @@
 #pragma once
 
 typedef enum {
-  SLOG_VERBOSE = 0,
-  SLOG_DEBUG,
-  SLOG_INFO,
-  SLOG_WARN,
-  SLOG_ERROR,
+    SLOG_VERBOSE = 0,
+    SLOG_DEBUG,
+    SLOG_INFO,
+    SLOG_WARN,
+    SLOG_ERROR,
 } slog_level_t;
 
 // ---- ESP-IDF ----
@@ -14,7 +14,8 @@ typedef enum {
 #include <esp_log.h>
 
 // File scoped registration
-#define SLOG_REGISTER(tag_literal) static const char *const slog_tag__ = (tag_literal)
+#define SLOG_REGISTER(tag_literal)                                                  \
+    static const char *const slog_tag__ = (tag_literal)
 #define SLOG_TAG (slog_tag__)
 
 // Direct dispatch, eg SLOGE("hello") -> ESP_LOGE(SLOG_TAG, "hello")
@@ -25,27 +26,27 @@ typedef enum {
 #define SLOGE(fmt, ...) ESP_LOGE(SLOG_TAG, fmt, ##__VA_ARGS__)
 
 // Generic dispatch, eg SLOG(SLOG_ERROR, "hello") -> ESP_LOGE(SLOG_TAG, "hello")
-#define SLOG(level, fmt, ...)                                                                      \
-  do {                                                                                             \
-    switch ((level)) {                                                                             \
-    case SLOG_ERROR:                                                                               \
-      ESP_LOGE(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
-      break;                                                                                       \
-    case SLOG_WARN:                                                                                \
-      ESP_LOGW(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
-      break;                                                                                       \
-    case SLOG_INFO:                                                                                \
-      ESP_LOGI(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
-      break;                                                                                       \
-    case SLOG_VERBOSE:                                                                             \
-      ESP_LOGV(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
-      break;                                                                                       \
-    case SLOG_DEBUG:                                                                               \
-    default:                                                                                       \
-      ESP_LOGD(SLOG_TAG, fmt, ##__VA_ARGS__);                                                      \
-      break;                                                                                       \
-    }                                                                                              \
-  } while (0)
+#define SLOG(level, fmt, ...)                                                       \
+    do {                                                                            \
+        switch ((level)) {                                                          \
+        case SLOG_ERROR:                                                            \
+            ESP_LOGE(SLOG_TAG, fmt, ##__VA_ARGS__);                                 \
+            break;                                                                  \
+        case SLOG_WARN:                                                             \
+            ESP_LOGW(SLOG_TAG, fmt, ##__VA_ARGS__);                                 \
+            break;                                                                  \
+        case SLOG_INFO:                                                             \
+            ESP_LOGI(SLOG_TAG, fmt, ##__VA_ARGS__);                                 \
+            break;                                                                  \
+        case SLOG_VERBOSE:                                                          \
+            ESP_LOGV(SLOG_TAG, fmt, ##__VA_ARGS__);                                 \
+            break;                                                                  \
+        case SLOG_DEBUG:                                                            \
+        default:                                                                    \
+            ESP_LOGD(SLOG_TAG, fmt, ##__VA_ARGS__);                                 \
+            break;                                                                  \
+        }                                                                           \
+    } while (0)
 
 // ---- GENERIC / HOST ----
 #else
@@ -53,12 +54,13 @@ typedef enum {
 #include <stdarg.h>
 
 // API
-typedef void (*slog_generic_v_fn_t)(slog_level_t level, const char *tag, const char *fmt,
-                                    va_list args, void *user);
+typedef void (*slog_generic_v_fn_t)(slog_level_t level, const char *tag,
+                                    const char *fmt, va_list args, void *user);
 void slog_generic_set_sink(slog_generic_v_fn_t fn, void *user); // NOLINT
 
 // File scoped registration
-#define SLOG_REGISTER(tag_literal) static const char *const slog_tag__ = (tag_literal)
+#define SLOG_REGISTER(tag_literal)                                                  \
+    static const char *const slog_tag__ = (tag_literal)
 #define SLOG_TAG (slog_tag__)
 
 void slog_generic_log(slog_level_t level, const char *tag, const char *fmt, ...)
