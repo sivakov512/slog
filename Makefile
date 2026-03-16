@@ -12,10 +12,10 @@ __TESTS_BUILD_DIR := $(__TESTS_DIR)/build
 __UNAME_S := $(shell uname -s)
 
 ifeq ($(__UNAME_S),Darwin)
-# Add path to __SDK on MacOS
-  __XCRUN := $(shell command -v __XCRUN 2>/dev/null)
+# Add path to SDK on MacOS
+  __XCRUN := $(shell command -v xcrun 2>/dev/null)
   ifneq ($(__XCRUN),)
-    __SDK := $(shell __XCRUN --show-__SDK-path 2>/dev/null)
+    __SDK := $(shell xcrun --show-sdk-path 2>/dev/null)
     ifneq ($(__SDK),)
       CLANG_TIDY_EXTRAS += --extra-arg=-isysroot$(__SDK)
     endif
